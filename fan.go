@@ -14,7 +14,8 @@ const pwmPeriod = 40000
 type fan struct {
 	curve         []curvePoint
 	dutyCycleFile *os.File
-	enablePath    string
+	path          string
+	function      int
 
 	history *RingBuffer
 }
@@ -42,7 +43,7 @@ func newFan(curve []curvePoint, chip string, function int) (f *fan, err error) {
 	}
 
 	// Open duty cycle dutyCycleFile and keep it open until we close the program.
-	dutyCycleFile, err := os.Open(dutyCycle)
+	dutyCycleFile, err := os.OpenFile(dutyCycle, os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("open duty_cycle: %w", err)
 	}
@@ -65,7 +66,8 @@ func newFan(curve []curvePoint, chip string, function int) (f *fan, err error) {
 	return &fan{
 		curve:         curve,
 		dutyCycleFile: dutyCycleFile,
-		enablePath:    enable,
+		path:          pindir,
+		function:      function,
 		history:       NewRingBuffer(fanSmoothingHistoryLen),
 	}, nil
 }
@@ -73,15 +75,23 @@ func newFan(curve []curvePoint, chip string, function int) (f *fan, err error) {
 func (f *fan) Close() error {
 	errs := make([]error, 0)
 
-	// Disable
-	buf := []byte("0")
-	if err := os.WriteFile(f.enablePath, buf, 0o644); err != nil {
-		errs = append(errs, fmt.Errorf("write enable 0: %w", err))
-	}
-
 	// Close duty_cycle file
 	if err := f.dutyCycleFile.Close(); err != nil {
 		errs = append(errs, fmt.Errorf("close duty_cycle: %w", err))
+	}
+
+	// Disable
+	path := filepath.Join(f.path, "enable")
+	buf := []byte("0")
+	if err := os.WriteFile(path, buf, 0o644); err != nil {
+		errs = append(errs, fmt.Errorf("write enable 0: %w", err))
+	}
+
+	// Unexport
+	path = filepath.Join(f.path, "unexport")
+	buf = []byte(strconv.Itoa(f.function))
+	if err := os.WriteFile(path, buf, 0o644); err != nil {
+		errs = append(errs, fmt.Errorf("write unexport: %w", err))
 	}
 
 	return errors.Join(errs...)

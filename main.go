@@ -37,8 +37,8 @@ func turnDisksOn() (free func() error, err error) {
 	return lines.Close, nil
 }
 
-func loop(_ context.Context, tr *tempReader, fanCPU, fanCase *fan) error {
-	temp, err := tr.Read()
+func loop(_ context.Context, fanCPU, fanCase *fan) error {
+	temp, err := readTemperature()
 	if err != nil {
 		return fmt.Errorf("reading temps: %w", err)
 	}
@@ -60,19 +60,13 @@ func run(ctx context.Context, cfg *config) error {
 	}
 	defer logclose(free, "freeing disk gpio")
 
-	temps, err := newTempReader()
-	if err != nil {
-		return fmt.Errorf("new temp reader: %w", err)
-	}
-	defer logclose(temps.Close, "closing temp file")
-
-	fanCPU, err := newFan(cfg.FanCurve, "pwmchip0", 12)
+	fanCPU, err := newFan(cfg.FanCurve, "pwmchip0", 0)
 	if err != nil {
 		return fmt.Errorf("new cpu fan: %w", err)
 	}
 	defer logclose(fanCPU.Close, "closing cpu fan")
 
-	fanCase, err := newFan(cfg.FanCurve, "pwmchip0", 13)
+	fanCase, err := newFan(cfg.FanCurve, "pwmchip0", 1)
 	if err != nil {
 		return fmt.Errorf("new case fan: %w", err)
 	}
@@ -85,7 +79,7 @@ func run(ctx context.Context, cfg *config) error {
 		default:
 		}
 
-		if err := loop(ctx, temps, fanCPU, fanCase); err != nil {
+		if err := loop(ctx, fanCPU, fanCase); err != nil {
 			fmt.Print("ERROR:", err)
 		}
 	}
@@ -99,13 +93,13 @@ func main() {
 
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Print("parameters error:", err)
+		fmt.Println("parameters error:", err)
 		os.Exit(1)
 	}
 
 	err = run(ctx, cfg)
 	if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-		fmt.Print("fatal error:", err)
+		fmt.Println("fatal error:", err)
 		os.Exit(1)
 	}
 }
