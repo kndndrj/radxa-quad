@@ -14,7 +14,8 @@ const pwmPeriod = 40000
 type fan struct {
 	curve         []curvePoint
 	dutyCycleFile *os.File
-	path          string
+	enablePath    string
+	unexportPath  string
 	function      int
 
 	history *RingBuffer
@@ -66,7 +67,8 @@ func newFan(curve []curvePoint, chip string, function int) (f *fan, err error) {
 	return &fan{
 		curve:         curve,
 		dutyCycleFile: dutyCycleFile,
-		path:          pindir,
+		enablePath:    enable,
+		unexportPath:  filepath.Join(chipdir, "unexport"),
 		function:      function,
 		history:       NewRingBuffer(fanSmoothingHistoryLen),
 	}, nil
@@ -81,16 +83,12 @@ func (f *fan) Close() error {
 	}
 
 	// Disable
-	path := filepath.Join(f.path, "enable")
-	buf := []byte("0")
-	if err := os.WriteFile(path, buf, 0o644); err != nil {
+	if err := os.WriteFile(f.enablePath, []byte("0"), 0o644); err != nil {
 		errs = append(errs, fmt.Errorf("write enable 0: %w", err))
 	}
 
 	// Unexport
-	path = filepath.Join(f.path, "unexport")
-	buf = []byte(strconv.Itoa(f.function))
-	if err := os.WriteFile(path, buf, 0o644); err != nil {
+	if err := os.WriteFile(f.unexportPath, []byte(strconv.Itoa(f.function)), 0o644); err != nil {
 		errs = append(errs, fmt.Errorf("write unexport: %w", err))
 	}
 
