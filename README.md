@@ -1,0 +1,46 @@
+# Radxa Quad SATA Hat Controller
+
+This service controls both CPU and Case fans of the
+[Quad SATA Hat](https://wiki.radxa.com/Dual_Quad_SATA_HAT) for Raspberry Pi 4B.
+
+> **NOTE**: Only works with Raspberry Pi 4B.
+
+## AAAAAAAAAAAAAAAAAA!!!!!
+
+**WHY THIS PROJECT??**
+
+- No other project I tried worked with both fans.
+- I don't need the button and OLED functionality.
+- I just need something that turns on the disks and regulates fans.
+
+## Usage
+
+Compile with the following command. Make sure that you set `GOOS` and `GOARCH` environment variables
+if you are cross compiling.
+
+```sh
+go build .
+```
+
+You can then run the binary like any other. A fan curve can be modified by passing an argument on
+the command line.
+
+```sh
+# Set a fan curve of "<temp>=<speed>%,<temp>=<speed>%..."
+radxa-quad --fan-curve '0=0%,70=0%,100=100%'
+```
+
+If you want to run this on startup, create a systemd service. Something like this...
+
+```ini
+[Unit]
+Description=Quad SATA Hat
+
+[Service]
+Type=simple
+ExecStart=/path/to/binary
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
