@@ -15,8 +15,11 @@ This service controls both CPU and Case fans of the
 
 ## Usage
 
-Compile with the following command. Make sure that you set `GOOS` and `GOARCH` environment variables
-if you are cross compiling.
+First, put `dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4` to `config.txt`. This enables pwm
+channel 0 and 1 (on pwmchip0) on pins 12 and 13 respectively.
+
+Then, compile with the following command. Make sure that you set `GOOS` and `GOARCH` environment
+variables if you are cross compiling.
 
 ```sh
 go build .
