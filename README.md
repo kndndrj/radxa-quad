@@ -29,8 +29,11 @@ You can then run the binary like any other. A fan curve can be modified by passi
 the command line.
 
 ```sh
-# Set a fan curve of "<temp>=<speed>%,<temp>=<speed>%..."
-radxa-quad --fan-curve '0=0%,70=0%,100=100%'
+# Contral fans with the curve: "<temp>=<speed>%,<temp>=<speed>%..."
+radxa-quad fans --curve '0=0%,70=0%,100=100%'
+# Turn on and hold gpio pins that power on gpio disks.
+# Notify systemd when disks are ready.
+radxa-quad --sdnotify disks --wait-for /dev/sda,/dev/sdb --timeout 2m
 ```
 
 If you want to run this on startup, create a systemd service. Something like this...
