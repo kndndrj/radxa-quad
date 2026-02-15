@@ -56,7 +56,9 @@ func loadConfig() (config, error) {
 	switch flag.Arg(0) {
 
 	case "disks":
-		disksCmd.Parse(flag.Args()[1:])
+		if err := disksCmd.Parse(flag.Args()[1:]); err != nil {
+			return nil, fmt.Errorf("failed parsing disks args: %w", err)
+		}
 
 		to, err := time.ParseDuration(*disksWaitTimeout)
 		if err != nil {
@@ -69,7 +71,9 @@ func loadConfig() (config, error) {
 			Timeout:  to,
 		}, nil
 	case "fans":
-		fansCmd.Parse(flag.Args()[1:])
+		if err := fansCmd.Parse(flag.Args()[1:]); err != nil {
+			return nil, fmt.Errorf("failed parsing fans args: %w", err)
+		}
 
 		curve, err := parseFanCurve(*fansCurve)
 		if err != nil {
@@ -82,7 +86,7 @@ func loadConfig() (config, error) {
 		}, nil
 
 	default:
-		return nil, errors.New("expected 'foo' or 'bar' subcommands")
+		return nil, errors.New("expected 'disks' or 'fans' subcommands")
 	}
 }
 
